@@ -35,6 +35,7 @@
               <input
                 v-model="ticker"
                 v-on:keydown.enter="add"
+                @click="showMessage = fals" 
                 type="text"
                 name="wallet"
                 id="wallet"
@@ -53,21 +54,7 @@
               >
                 {{ t }}
               </span>
-              <!--<span
-                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
-              >
-                DOGE
-              </span>
-              <span
-                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
-              >
-                BCH
-              </span>
-              <span
-                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
-              >
-                CHD
-              </span> -->
+
             </div>
               <div 
                 v-if="showMessage"
@@ -183,6 +170,8 @@
 </template>
 
 <script>
+
+
 export default {
   name: "App",
   data() {
@@ -197,22 +186,30 @@ export default {
     };
   },
   methods: {
+
     add() {
-      const currentTicker = {
-        name: this.ticker,
-        price: "-",
-      };
-      this.tickers.push(currentTicker);
-      setInterval(async() => {
-        const f = await fetch(
-          `https://min-api.cryptocompare.com/data/price?fsym=${currentTicker.name}&tsyms=USD&extraParams=Pi4`);
-          const data = await f.json();
-          this.tickers.find(t => t.name === currentTicker.name).price = data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
-          if (this.sel?.name === currentTicker.name) {
-            this.graf.push(data.USD);  
-          }
-      }, 15000);
-      this.ticker = "";
+      
+      if (this.tickers.find(item => item.name === this.ticker) === undefined) {
+          const currentTicker = {
+            name: this.ticker,
+            price: "-",
+          };
+          this.tickers.push(currentTicker);
+          setInterval(async() => {
+            const f = await fetch(
+              `https://min-api.cryptocompare.com/data/price?fsym=${currentTicker.name}&tsyms=USD&extraParams=Pi4`);
+              const data = await f.json();
+              if (data.USD > 0) {
+                this.tickers.find(t => t.name === currentTicker.name).price = data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
+                if (this.sel?.name === currentTicker.name) {
+                this.graf.push(data.USD);  
+                }
+              }
+          }, 15000);
+          this.ticker = "";
+        } else {
+          this.showMessage = true
+        }    
     },
     select(ticker){
       this.sel = ticker;
@@ -228,32 +225,37 @@ export default {
         price => 5 + ((price - minValue) * 95) / (maxValue - minValue));
     },
     chosCoins(ticker) {
+      this.ticker = ticker;
+      this.showMessage = false
+   
+    },
+    async fetchCoins() {
+      try {
+        const res = await fetch(
+          `https://min-api.cryptocompare.com/data/all/coinlist?summary=true`);
+          const data = await res.json();  
+          this.listCoins = Object.keys(data.Data);
+        
+      } catch(e) {
+        alert('Ошибка получения данных')
+      } finally {
+        console.log(this.listCoins)
+      
+        console.log(this.listCoins[2])
 
-      console.log(this.tickers.includes(ticker))
-      console.log(this.tickers)
-      console.log(ticker)
-      if (this.tickers.includes(ticker)) {
-        this.showMessage = true
-
-      } else {
-        this.ticker = ticker;
-        this.add();
-      }  
-    }
+      }
+   }
   },
   mounted() {
-    async function list() {
-        const f = await fetch(
-          `https://min-api.cryptocompare.com/data/all/coinlist?summary=true`);
-          const data = await f.json();  
-          const list = Object.keys(data.Data);
-          this.listCoins = await list
-          console.log(list)
-          //console.log(this.listCoins)
-           
-    }
-    list()
+    this.fetchCoins()
   },  
+  computed: {
+    selectFourCoins() {
+    let arr =  this.listCoins.filter(coin => coin.toUpperCase().include(this.ticker.toUpperCase()))
+    
+    this.chosenCoins = arr.slice(0, 4)
+    }
+  }
 };
 </script>
 
