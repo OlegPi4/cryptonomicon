@@ -46,11 +46,14 @@
               class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap"
             >
               <span
+                v-for="t in chosenCoins"
+                :key="t"
+                @click="chosCoins(t)"
                 class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
               >
-                BTC
+                {{ t }}
               </span>
-              <span
+              <!--<span
                 class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
               >
                 DOGE
@@ -64,9 +67,11 @@
                 class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
               >
                 CHD
-              </span>
+              </span> -->
             </div>
-            <div class="text-sm text-red-600">Такой тикер уже добавлен</div>
+              <div 
+                v-if="showMessage"
+                class="text-sm text-red-600">Такой тикер уже добавлен</div>
           </div>
         </div>
         <button
@@ -186,6 +191,9 @@ export default {
       tickers: [],
       sel: null,
       graf: [],
+      listCoins: [],
+      chosenCoins: ['BTC', 'DOGE', 'BCH', 'CDH'],
+      showMessage: false,
     };
   },
   methods: {
@@ -218,8 +226,34 @@ export default {
       const minValue = Math.min(...this.graf);
       return this.graf.map(
         price => 5 + ((price - minValue) * 95) / (maxValue - minValue));
+    },
+    chosCoins(ticker) {
+
+      console.log(this.tickers.includes(ticker))
+      console.log(this.tickers)
+      console.log(ticker)
+      if (this.tickers.includes(ticker)) {
+        this.showMessage = true
+
+      } else {
+        this.ticker = ticker;
+        this.add();
+      }  
     }
   },
+  mounted() {
+    async function list() {
+        const f = await fetch(
+          `https://min-api.cryptocompare.com/data/all/coinlist?summary=true`);
+          const data = await f.json();  
+          const list = Object.keys(data.Data);
+          this.listCoins = await list
+          console.log(list)
+          //console.log(this.listCoins)
+           
+    }
+    list()
+  },  
 };
 </script>
 
