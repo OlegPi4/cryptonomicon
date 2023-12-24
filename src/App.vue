@@ -47,7 +47,7 @@
               class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap"
             >
               <span
-                v-for="t in chosenCoins"
+                v-for="t in selectFourCoins"
                 :key="t"
                 @click="chosCoins(t)"
                 class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
@@ -181,7 +181,7 @@ export default {
       sel: null,
       graf: [],
       listCoins: [],
-      chosenCoins: ['BTC', 'DOGE', 'BCH', 'CDH'],
+     // chosenCoins: ['BTC', 'DOGE', 'BCH', 'CDH'],
       showMessage: false,
     };
   },
@@ -240,9 +240,6 @@ export default {
         alert('Ошибка получения данных')
       } finally {
         console.log(this.listCoins)
-      
-        console.log(this.listCoins[2])
-
       }
    }
   },
@@ -251,9 +248,19 @@ export default {
   },  
   computed: {
     selectFourCoins() {
-    let arr =  this.listCoins.filter(coin => coin.toUpperCase().include(this.ticker.toUpperCase()))
-    
-    this.chosenCoins = arr.slice(0, 4)
+      if(this.ticker.length === 0) {
+        return ['BTC', 'DOGE', 'BCH', 'CDH']
+      } else {
+        let arr = []
+        let i = 0
+        do {
+          if (String(this.listCoins[i]).includes(this.ticker.toUpperCase())) {
+            arr.push(String(this.listCoins[i]))
+          }
+          i = i + 1
+        } while (arr.length < 4)
+        return arr
+      }
     }
   }
 };
