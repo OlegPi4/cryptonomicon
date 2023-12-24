@@ -181,7 +181,6 @@ export default {
       sel: null,
       graf: [],
       listCoins: [],
-     // chosenCoins: ['BTC', 'DOGE', 'BCH', 'CDH'],
       showMessage: false,
     };
   },
@@ -252,18 +251,8 @@ export default {
       if(this.ticker.length === 0) {
         return ['BTC', 'DOGE', 'BCH', 'CDH']
       } else {
-        let arr = []
-        let i = 0
-        do {
-          if (String(this.listCoins[i]).includes(this.ticker.toUpperCase())) {
-            arr.push(String(this.listCoins[i]))
-          } else {
-            arr = []
-          }
-          i = i + 1
-        } while (arr.length < 4)
-        return arr
-      }
+       return this.listCoins.filter((item) => item.includes(this.ticker.toUpperCase())).slice(0, 4)  
+      }  
     }
   }
 };
