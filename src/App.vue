@@ -58,7 +58,8 @@
             </div>
               <div 
                 v-if="showMessage"
-                class="text-sm text-red-600">Такой тикер уже добавлен</div>
+                class="text-sm text-red-600">Такой тикер уже добавлен
+              </div>
           </div>
         </div>
         <button
@@ -171,7 +172,6 @@
 
 <script>
 
-
 export default {
   name: "App",
   data() {
@@ -190,7 +190,7 @@ export default {
       
       if (this.tickers.find(item => item.name === this.ticker.toUpperCase()) === undefined) {
           const currentTicker = {
-            name: this.ticker,
+            name: this.ticker.toUpperCase(),
             price: "-",
           };
           this.tickers.push(currentTicker);
@@ -206,9 +206,9 @@ export default {
               }
           }, 15000);
           this.ticker = "";
-        } else {
+      } else {
           this.showMessage = true
-        }    
+      }    
     },
     select(ticker){
       this.sel = ticker;
@@ -225,9 +225,7 @@ export default {
     },
     chosCoins(t) {
       this.ticker = t;
-      alert(`in this.ticker = ${this.ticker}`)
       this.showMessage = false
-   
     },
     async fetchCoins() {
       try {
@@ -235,12 +233,9 @@ export default {
           `https://min-api.cryptocompare.com/data/all/coinlist?summary=true`);
           const data = await res.json();  
           this.listCoins = Object.keys(data.Data);
-        
       } catch(e) {
         alert('Ошибка получения данных')
-      } finally {
-        console.log(this.listCoins)
-      }
+      } 
    }
   },
   mounted() {
