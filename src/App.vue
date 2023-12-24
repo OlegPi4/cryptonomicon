@@ -34,8 +34,8 @@
             <div class="mt-1 relative rounded-md shadow-md">
               <input
                 v-model="ticker"
-                v-on:keydown.enter="add"
-                @click="showMessage = fals" 
+                @keydown.enter="add"
+                @click="showMessage = fals"
                 type="text"
                 name="wallet"
                 id="wallet"
@@ -48,11 +48,11 @@
             >
               <span
                 v-for="t in selectFourCoins"
-                :key="t"
+                :key="t.id"
                 @click="chosCoins(t)"
                 class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
               >
-                {{ t }}
+                {{ t }} 
               </span>
 
             </div>
@@ -62,7 +62,7 @@
           </div>
         </div>
         <button
-          v-on:click="add"
+          @:click="add"
           type="button"
           class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
         >
@@ -96,7 +96,7 @@
           > 
             <div class="px-4 py-5 sm:p-6 text-center">
               <dt class="text-sm font-medium text-gray-500 truncate">
-                {{ t.name }}
+                {{ t.name }} - USD
               </dt>
               <dd class="mt-1 text-3xl font-semibold text-gray-900">
                 {{ t.price }}
@@ -189,7 +189,7 @@ export default {
 
     add() {
       
-      if (this.tickers.find(item => item.name === this.ticker) === undefined) {
+      if (this.tickers.find(item => item.name === this.ticker.toUpperCase()) === undefined) {
           const currentTicker = {
             name: this.ticker,
             price: "-",
@@ -224,8 +224,9 @@ export default {
       return this.graf.map(
         price => 5 + ((price - minValue) * 95) / (maxValue - minValue));
     },
-    chosCoins(ticker) {
-      this.ticker = ticker;
+    chosCoins(t) {
+      this.ticker = t;
+      alert(`in this.ticker = ${this.ticker}`)
       this.showMessage = false
    
     },
@@ -256,6 +257,8 @@ export default {
         do {
           if (String(this.listCoins[i]).includes(this.ticker.toUpperCase())) {
             arr.push(String(this.listCoins[i]))
+          } else {
+            arr = []
           }
           i = i + 1
         } while (arr.length < 4)
