@@ -9,3 +9,16 @@ export const loadTickers = tickers =>
          Object.entries(rawData).map(([key, value]) => [key, value.USD])
       ));
    
+export const  loadCoins = async  function() { 
+    try {
+        const res = await fetch(
+         `https://min-api.cryptocompare.com/data/all/coinlist?summary=true`);
+         const data =   await res.json();  
+         const coins = Object.keys(data.Data);
+         return coins
+      } catch(e) {
+        alert('Ошибка получения данных')
+      }
+   }    
+
+

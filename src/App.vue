@@ -190,7 +190,7 @@
 
 <script>
 
-import { loadTickers } from './api';
+import { loadTickers, loadCoins } from './api';
 
 export default {
   name: "App",
@@ -337,15 +337,9 @@ export default {
     },
 
     async fetchCoins() {
-      try {
-        const res = await fetch(
-          `https://min-api.cryptocompare.com/data/all/coinlist?summary=true`);
-          const data = await res.json();  
-          this.listCoins = Object.keys(data.Data);
-      } catch(e) {
-        alert('Ошибка получения данных')
-      } 
-   }
+     const coins = await loadCoins();  
+     this.listCoins = coins;
+    },    
   },
 
   watch: {
@@ -374,8 +368,8 @@ export default {
         `${window.location.pathname}?filter=${value.filter}&page=${value.page}`
       );
     }
-  }
-};
+  },
+}
 </script>
 
 
