@@ -118,7 +118,7 @@
                 {{ t.name }} - USD
               </dt>
               <dd class="mt-1 text-3xl font-semibold text-gray-900">
-                {{ t.price }}
+                {{ formatPrice(t.price) }}
               </dd>
             </div>
             <div class="w-full border-t border-gray-200"></div>
@@ -190,6 +190,8 @@
 
 <script>
 
+import { loadTickers } from './api';
+
 export default {
   name: "App",
   data() {
@@ -222,10 +224,9 @@ export default {
 
     if(tickersData) {
       this.tickers = JSON.parse(tickersData);
-      this.tickers.forEach(ticker => {
-        this.subscribeToUpdates(ticker.name);
-      })
     }
+
+    setInterval(this.updateTickers, 15000);
   },
 
   mounted() {
@@ -281,19 +282,28 @@ export default {
   },
 
   methods: {
-    
-    subscribeToUpdates(tickerName) {
-      setInterval(async() => {
-            const f = await fetch(
-              `https://min-api.cryptocompare.com/data/price?fsym=${tickerName}&tsyms=USD&extraParams=Pi4`);
-              const data = await f.json();
-              if (data.USD > 0) {
-                this.tickers.find(t => t.name === tickerName).price = data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
-                if (this.selectedTicker?.name === tickerName) {
-                this.graf.push(data.USD);  
-                }
-              }
-          }, 15000);
+    formatPrice(price) {
+      if (price === "-") {
+        return price
+      }
+      return  price > 1 ? price.toFixed(2) : price.toPrecision(2);  
+    },
+
+    async updateTickers() {
+        if (!this.tickers.length) {
+          return;
+        }
+
+        const exchangeData = await loadTickers(this.tickers.map(t => t.name));
+
+        this.tickers.forEach(ticker => {
+          const price = exchangeData[ticker.name.toUpperCase()];
+          ticker.price = price ?? "-";
+          
+          if (this.selectedTicker?.name === ticker.name && price > 0) {
+            this.graf.push(price)
+          }
+        });    
     },
 
     add() {
@@ -305,9 +315,6 @@ export default {
 
           this.tickers = [...this.tickers, currentTicker];
           this.filter = "";
-         
-          this.subscribeToUpdates(currentTicker.name);
-          this.ticker = "";
       } else {
           this.showMessage = true
       }    
