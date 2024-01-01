@@ -190,7 +190,7 @@
 
 <script>
 
-import { loadTickers, loadCoins } from './api';
+import { loadCoins, subscribeToTicker, unsubscribeFromTicker } from './api';
 
 export default {
   name: "App",
@@ -224,9 +224,14 @@ export default {
 
     if(tickersData) {
       this.tickers = JSON.parse(tickersData);
+      this.tickers.forEach(ticker => {
+        subscribeToTicker(ticker.name, newPrice => 
+          this.updateTicker(ticker.name, newPrice)
+        );
+      })
     }
 
-    setInterval(this.updateTickers, 15000);
+    //setInterval(this.updateTickers, 15000);
   },
 
   mounted() {
@@ -282,6 +287,14 @@ export default {
   },
 
   methods: {
+    updateTicker(tickerName, price) {
+      this.tickers
+        .filter(t => t.name === tickerName)
+        .forEach(t => {
+        t.price = price
+      });
+    }, 
+
     formatPrice(price) {
       if (price === "-") {
         return price
@@ -314,7 +327,11 @@ export default {
           };
 
           this.tickers = [...this.tickers, currentTicker];
+          this.ticker = ""; 
           this.filter = "";
+          subscribeToTicker(currentTicker.name, newPrice => 
+            this.updateTicker(currentTicker.name, newPrice)  
+          );
       } else {
           this.showMessage = true
       }    
@@ -329,6 +346,7 @@ export default {
       if(this.selectedTicker == tickerRemove) {
         this.selectedTicker = null;
       }
+      unsubscribeFromTicker(tickerRemove.name);
     },
 
     chosCoins(t) {
