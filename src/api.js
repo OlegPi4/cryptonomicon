@@ -1,3 +1,4 @@
+
 import { stringify } from "postcss";
 
 const API_KEY = '97ccca707d627ca204a2c8058a751cf42e7de0144f03f5081b95e336adc8a438';
@@ -7,51 +8,30 @@ const socket = new WebSocket(`wss://streamer.cryptocompare.com/v2?&api_key=${API
 );
 
 const AGGREGATE_INDEX = "5";
+const TYPE500 = "500";
 
 socket.addEventListener("message", e => {
-   const {TYPE: type, FROMSYMBOL: currency, PRICE: newPrice} = JSON.parse(e.data);
-   if (type != AGGREGATE_INDEX) {
-      return;
+   const {TYPE: type, FROMSYMBOL: currency, PRICE: newPrice, TOSYMBOL: 
+   baseCurrency, MESSAGE: mess, PARAMETER: param } = JSON.parse(e.data);
+   if ((type === AGGREGATE_INDEX && newPrice != undefined) || (type === TYPE500) ) {
+      const pointer = mess === "INVALID_SUB" ? 1 : 0;
+     
+      if (pointer === 1) {
+         let currency = param.slice(9, 12);  
+         let newPrice = "-"; 
+         callHandlers(newPrice, currency, pointer);
+      }
+      callHandlers(newPrice, currency, pointer);    
    }
-
-   const handlers = tickersHandlers.get(currency) ?? [];
-   handlers.forEach(fn => fn(newPrice));
-});
-
-// запрос цен тиккеров 
-// export const loadTickers = () => { 
-//    if(tickersHandlers.size === 0) {  
-//       return;
-//    }
+   return;
    
-//    fetch(
-//    `https://min-api.cryptocompare.com/data/pricemulti?fsyms=${[
-//       ...tickersHandlers.keys()
-//       ]}&tsyms=USD&extraParams=Pi4`)
-//    .then(r => r.json())
-//    .then(rawData => {
-//       const updatePrices = Object.fromEntries(
-//          Object.entries(rawData).map(([key, value]) => [key, value.USD])
-//       );
+});
+function callHandlers(newPrice, currency, pointer) {
+   const handlers = tickersHandlers.get(currency) ?? [];
+   handlers.forEach(fn => fn(newPrice, pointer));
+}
 
-//       Object.entries(updatePrices).forEach(([currency, newPrice]) => {
-//          const handlers = tickersHandlers.get(currency) ?? [];
-//          handlers.forEach(fn => fn(newPrice));
-//       });
-//    });
-// }   
-//загрузка базы криптовалют для выведения подсказки под добавлением тиккера 
-// export const  loadCoins = async  function() { 
-//     try {
-//         const res = await fetch(
-//          `https://min-api.cryptocompare.com/data/all/coinlist?summary=true`);
-//          const data =   await res.json();  
-//          const coins = Object.keys(data.Data);
-//          return coins
-//       } catch(e) {
-//         alert('Ошибка получения данных')
-//       }
-//    }    
+
 
 //второй вариант загрузки списка криптовалют
 export const  loadCoins =  () => { 
@@ -72,7 +52,7 @@ function sentToWebSocket(message) {
 
    socket.addEventListener('open', () => {
       socket.send(stringifiedMessage);
-   }, { once: true});
+   }, { once: true });
 }
 
 function subscribeToTickerOnWs(ticker) {

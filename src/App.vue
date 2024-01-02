@@ -225,13 +225,12 @@ export default {
     if(tickersData) {
       this.tickers = JSON.parse(tickersData);
       this.tickers.forEach(ticker => {
-        subscribeToTicker(ticker.name, newPrice => 
-          this.updateTicker(ticker.name, newPrice)
+        subscribeToTicker(ticker.name, (newPrice, pointer) => { 
+          this.updateTicker(ticker.name, newPrice, pointer);
+          }
         );
       })
     }
-
-    //setInterval(this.updateTickers, 15000);
   },
 
   mounted() {
@@ -287,12 +286,18 @@ export default {
   },
 
   methods: {
-    updateTicker(tickerName, price) {
+
+    updateTicker(tickerName, price, pointer) {
       this.tickers
         .filter(t => t.name === tickerName)
         .forEach(t => {
-        t.price = price
+          if(t === this.selectedTicker) {
+            this.graf.push(price);
+          }
+        t.price = price;
+        t.pointerBg = pointer;
       });
+     console.log(this.tickers);
     }, 
 
     formatPrice(price) {
@@ -302,36 +307,20 @@ export default {
       return  price > 1 ? price.toFixed(2) : price.toPrecision(2);  
     },
 
-    async updateTickers() {
-        if (!this.tickers.length) {
-          return;
-        }
-
-        const exchangeData = await loadTickers(this.tickers.map(t => t.name));
-
-        this.tickers.forEach(ticker => {
-          const price = exchangeData[ticker.name.toUpperCase()];
-          ticker.price = price ?? "-";
-          
-          if (this.selectedTicker?.name === ticker.name && price > 0) {
-            this.graf.push(price)
-          }
-        });    
-    },
-
     add() {
        if (this.tickers.find(item => item.name === this.ticker.toUpperCase()) === undefined) {
           const currentTicker = {
             name: this.ticker.toUpperCase(),
             price: "-",
+            pointerBg: "",
           };
 
           this.tickers = [...this.tickers, currentTicker];
           this.ticker = ""; 
           this.filter = "";
-          subscribeToTicker(currentTicker.name, newPrice => 
-            this.updateTicker(currentTicker.name, newPrice)  
-          );
+          subscribeToTicker(currentTicker.name, (newPrice, pointer) => { 
+          this.updateTicker(currentTicker.name, newPrice, pointer);
+          })
       } else {
           this.showMessage = true
       }    
@@ -388,6 +377,7 @@ export default {
     }
   },
 }
+
 </script>
 
 
