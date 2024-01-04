@@ -2,7 +2,7 @@
 import { stringify } from "postcss";
 
 const API_KEY = '97ccca707d627ca204a2c8058a751cf42e7de0144f03f5081b95e336adc8a438';
-
+let krosList = []; 
 const tickersHandlers = new Map(); // объект
 const socket = new WebSocket(`wss://streamer.cryptocompare.com/v2?&api_key=${API_KEY}`
 );
@@ -17,7 +17,10 @@ socket.addEventListener("message", e => {
       const pointer = mess === "INVALID_SUB" ? 1 : 0;
      
       if (pointer === 1) {
-         let currency = param.slice(9, 12);  
+         let currency = param.split('~')[2];  
+         if (!krosList.includes(currency)) {
+            krosList.push(currency);
+         }
          let newPrice = "-"; 
          callHandlers(newPrice, currency, pointer);
       }
@@ -26,6 +29,7 @@ socket.addEventListener("message", e => {
    return;
    
 });
+
 function callHandlers(newPrice, currency, pointer) {
    const handlers = tickersHandlers.get(currency) ?? [];
    handlers.forEach(fn => fn(newPrice, pointer));
@@ -55,12 +59,18 @@ function sentToWebSocket(message) {
    }, { once: true });
 }
 
+
 function subscribeToTickerOnWs(ticker) {
+   //if (krosList.includes(ticker)) {
+   //   console.log(`in if subscribeToTickerOnWs`)
+   //}
    sentToWebSocket({
       "action": "SubAdd",
       "subs": [`5~CCCAGG~${ticker}~USD`]
    });
 }
+
+
 
 function unSubscribeFromTickerOnWs(ticker) {
    sentToWebSocket({
@@ -83,4 +93,21 @@ export const unsubscribeFromTicker = ticker  => {
    unSubscribeFromTickerOnWs(ticker);
 };
 
-// setInterval(loadTickers, 5000);
+// Удаление тиккера из списка кроскурсов
+export const deletingFromKroslist = ticker  => {
+   krosList = krosList.filter( t => t != ticker)
+};
+
+
+////
+// const API_KEY = '97ccca707d627ca204a2c8058a751cf42e7de0144f03f5081b95e336adc8a438';
+
+// const socket = new WebSocket(`wss://streamer.cryptocompare.com/v2?&api_key=${API_KEY}`
+// );
+// socket.readyState
+
+
+// socket.send(JSON.stringify({
+//    "action": "SubAdd",
+//    "subs": ['5~CCCAGG~BTCD~BTC' ]
+// }));

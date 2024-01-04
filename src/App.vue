@@ -67,19 +67,7 @@
           type="button"
           class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
         >
-          <!-- Heroicon name: solid/mail -->
-          <svg
-            class="-ml-0.5 mr-2 h-6 w-6"
-            xmlns="http://www.w3.org/2000/svg"
-            width="30"
-            height="30"
-            viewBox="0 0 24 24"
-            fill="#ffffff"
-          >
-            <path
-              d="M13 7h-2v4H7v2h4v4h2v-4h4v-2h-4V7zm-1-5C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"
-            ></path>
-          </svg>
+          <plus-sign-icon />
           Добавить
         </button>
       </section>
@@ -113,7 +101,12 @@
             }" 
             class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer"
           > 
-            <div class="px-4 py-5 sm:p-6 text-center">
+            <div 
+            :class="{
+              'bg-red-100' : t.pointerBg === 1
+            }" 
+            class="px-4 py-5 sm:p-6 text-center"
+            >
               <dt class="text-sm font-medium text-gray-500 truncate">
                 {{ t.name }} - USD
               </dt>
@@ -150,69 +143,67 @@
         <h3 class="text-lg leading-6 font-medium text-gray-900 my-8">
           {{ selectedTicker.name }} - USD
         </h3>
-        <div class="flex items-end border-gray-600 border-b border-l h-64">
+        <div 
+          class="flex items-end border-gray-600 border-b border-l h-64"
+          ref="graph" >
           <div 
           v-for="(bar, idx) in normalizedGraph"
           :key="idx"
-          :style="{ height: `${bar}%` }"
-          class="bg-purple-800 border w-10"></div>
+          :style="{ 
+            height: `${bar}%`,
+            width: `${withElementGraph}`
+             }"
+          class="bg-purple-800 border w-7" 
+            ></div>
         </div>
         <button 
-        @click="selectedTicker = null"
-          type="button"
-          class="absolute top-0 right-0">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            xmlns:xlink="http://www.w3.org/1999/xlink"
-            xmlns:svgjs="http://svgjs.com/svgjs"
-            version="1.1"
-            width="30"
-            height="30"
-            x="0"
-            y="0"
-            viewBox="0 0 511.76 511.76"
-            style="enable-background: new 0 0 512 512"
-            xml:space="preserve"
-          >
-            <g>
-              <path
-                d="M436.896,74.869c-99.84-99.819-262.208-99.819-362.048,0c-99.797,99.819-99.797,262.229,0,362.048    c49.92,49.899,115.477,74.837,181.035,74.837s131.093-24.939,181.013-74.837C536.715,337.099,536.715,174.688,436.896,74.869z     M361.461,331.317c8.341,8.341,8.341,21.824,0,30.165c-4.16,4.16-9.621,6.251-15.083,6.251c-5.461,0-10.923-2.091-15.083-6.251    l-75.413-75.435l-75.392,75.413c-4.181,4.16-9.643,6.251-15.083,6.251c-5.461,0-10.923-2.091-15.083-6.251    c-8.341-8.341-8.341-21.845,0-30.165l75.392-75.413l-75.413-75.413c-8.341-8.341-8.341-21.845,0-30.165    c8.32-8.341,21.824-8.341,30.165,0l75.413,75.413l75.413-75.413c8.341-8.341,21.824-8.341,30.165,0    c8.341,8.32,8.341,21.824,0,30.165l-75.413,75.413L361.461,331.317z"
-                fill="#718096"
-                data-original="#000000"
-              ></path>
-            </g>
-          </svg>
+            @click="selectedTicker = null"
+            type="button"
+            class="absolute top-0 right-0">
+          
+          <icon-close-graph />
         </button>
+                
       </section>
     </div>
   </div>
 </template>
 
 <script>
+import { nextTick } from 'vue';
 
-import { loadCoins, subscribeToTicker, unsubscribeFromTicker } from './api';
+import { loadCoins, subscribeToTicker, unsubscribeFromTicker, deletingFromKroslist } from './api';
+import PlusSignIcon from '@/conponents/PlusSignIcon.vue';
+import IconCloseGraph from '@/conponents/IconCloseGraph.vue';
 
 export default {
   name: "App",
+
+  components: {
+    PlusSignIcon,
+    IconCloseGraph,
+  },
+
   data() {
     return {
       ticker: "",
       tickers: [],
       selectedTicker: null,
-      graf: [],
+      graph: [],
       listCoins: [],
       showMessage: false,
       page: 1,
       filter: "",
- 
-    };
+      maxGraphElements: 24,
+      withElementGraph: 22,
+     };
   },
   created() {
     const windowData = Object.fromEntries(new URL(
     window.location).searchParams.entries());
     
     if(windowData.filter) {
-      console.log(windowData.filter)
+      //console.log(windowData.filter)
       this.filter = windowData.filter;
     }
 
@@ -231,13 +222,22 @@ export default {
         );
       })
     }
+    window.addEventListener("resize", this.calculatingSizeGraphElements);
+    
   },
 
   mounted() {
-    this.fetchCoins()
+    this.fetchCoins();
   },  
 
+  beforeUnmount() {
+    
+    window.removeEventListener("resize", this.calculatingSizeGraphElements);
+    localStorage.setItem('cryptonomicon-list', JSON.stringify(this.tickers));
+  }, 
+
   computed: {
+    
     startIndex() {
       return (this.page - 1) * 6;
     },
@@ -259,13 +259,13 @@ export default {
     },
 
     normalizedGraph() {
-      const maxValue = Math.max(...this.graf);
-      const minValue = Math.min(...this.graf);
+      const maxValue = Math.max(...this.graph);
+      const minValue = Math.min(...this.graph);
 
       if(maxValue == minValue) {
-        return this.graf.map(() => 50);
+        return this.graph.map(() => 50);
       }
-      return this.graf.map(
+      return this.graph.map(
         price => 5 + ((price - minValue) * 95) / (maxValue - minValue));
     },
 
@@ -286,18 +286,50 @@ export default {
   },
 
   methods: {
+    // метод расчета количества и ширины элементов графика 
+    // принято что при ширине графика до 400px будет 20 элементов
+    // при ширине более 1400рх - 60 элементов, в среднем диапазоне будет расчет 
+    calculatingSizeGraphElements() {
+      
+      if(!this.$refs.graph) {
+        return;
+      }
+
+      const widthMin = 400;   
+      const widthMax = 1400;
+      const elementsMin = 20;
+      const elementsMax = 60;
+      const widthGrapgFact = this.$refs.graph.clientWidth
+      
+      if ( widthGrapgFact <= 400) {
+          this.maxGraphElements = elementsMin;
+          this.withElementGraph = widthGrapgFact / elementsMin;
+      } else if ( widthGrapgFact <= 400 ) {
+          this.maxGraphElements = elementsMax;
+          this.withElementGraph = widthGrapgFact / elementsMax;
+      } else {
+          let k = (widthGrapgFact - widthMin) / (widthMax - widthMin);
+          this.maxGraphElements = elementsMin + Math.floor( k * (elementsMax - elementsMin));
+          this.withElementGraph = Math.floor(widthGrapgFact / this.maxGraphElements)
+      }
+      console.log(`Graph  N - ${this.maxGraphElements}  W - ${this.withElementGraph}`)
+    },  
 
     updateTicker(tickerName, price, pointer) {
       this.tickers
         .filter(t => t.name === tickerName)
         .forEach(t => {
           if(t === this.selectedTicker) {
-            this.graf.push(price);
+            this.graph.push(price);
+            if (this.graph.length > this.maxGraphElements) {
+              const delta = this.graph.length - this.maxGraphElements;
+              this.graph = this.graph.slice(delta);
+            }
+
           }
         t.price = price;
         t.pointerBg = pointer;
       });
-     console.log(this.tickers);
     }, 
 
     formatPrice(price) {
@@ -328,6 +360,7 @@ export default {
 
     select(ticker){
       this.selectedTicker = ticker;
+ 
     },
 
     handleDelete(tickerRemove) {
@@ -336,6 +369,7 @@ export default {
         this.selectedTicker = null;
       }
       unsubscribeFromTicker(tickerRemove.name);
+      deletingFromKroslist(tickerRemove.name);
     },
 
     chosCoins(t) {
@@ -351,7 +385,9 @@ export default {
 
   watch: {
     selectedTicker() {
-      this.graf= [];
+      this.graph= [];
+
+      this.$nextTick().then(this.calculatingSizeGraphElements);
     },
 
     tickers() {
