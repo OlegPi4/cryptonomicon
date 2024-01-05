@@ -26,50 +26,7 @@
     </div> -->
     <div class="container">
       <section>
-        <div class="flex">
-          <div class="max-w-xs">
-            <label for="wallet" class="block text-sm font-medium text-gray-700"
-              >Тикер</label
-            >
-            <div class="mt-1 relative rounded-md shadow-md">
-              <input
-                v-model="ticker"
-                @keydown.enter="add"
-                @click="showMessage = fals"
-                type="text"
-                name="wallet"
-                id="wallet"
-                class="block w-full pr-10 border-gray-300 text-gray-900 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm rounded-md"
-                placeholder="Например DOGE"
-              />
-            </div>
-            <div
-              class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap"
-            >
-              <span
-                v-for="t in selectFourCoins"
-                :key="t.id"
-                @click="chosCoins(t)"
-                class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
-              >
-                {{ t }} 
-              </span>
-
-            </div>
-              <div 
-                v-if="showMessage"
-                class="text-lg text-red-600">Такой тикер уже добавлен
-              </div>
-          </div>
-        </div>
-        <button
-          @:click="add"
-          type="button"
-          class="my-4 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-        >
-          <plus-sign-icon />
-          Добавить
-        </button>
+        <add-ticker :listTickers="tickers" @add-ticker="add" />
       </section>
       <template v-if="tickers.length">
         <hr class="w-full border-t border-gray-600 my-4" />
@@ -172,26 +129,23 @@
 <script>
 import { nextTick } from 'vue';
 
-import { loadCoins, subscribeToTicker, unsubscribeFromTicker, deletingFromKroslist } from './api';
-import PlusSignIcon from '@/conponents/PlusSignIcon.vue';
+import { subscribeToTicker, unsubscribeFromTicker, deletingFromKroslist } from './api';
+import AddTicker from '@/conponents/AddTicker.vue';
 import IconCloseGraph from '@/conponents/IconCloseGraph.vue';
 
 export default {
   name: "App",
 
   components: {
-    PlusSignIcon,
+    AddTicker,
     IconCloseGraph,
   },
 
   data() {
     return {
-      ticker: "",
       tickers: [],
       selectedTicker: null,
       graph: [],
-      listCoins: [],
-      showMessage: false,
       page: 1,
       filter: "",
       maxGraphElements: 24,
@@ -203,7 +157,6 @@ export default {
     window.location).searchParams.entries());
     
     if(windowData.filter) {
-      //console.log(windowData.filter)
       this.filter = windowData.filter;
     }
 
@@ -225,10 +178,6 @@ export default {
     window.addEventListener("resize", this.calculatingSizeGraphElements);
     
   },
-
-  mounted() {
-    this.fetchCoins();
-  },  
 
   beforeUnmount() {
     
@@ -275,14 +224,7 @@ export default {
         page: this.page,
       };
     },  
-
-    selectFourCoins() {
-      if(this.ticker.length === 0) {
-        return ['BTC', 'DOGE', 'BCH', 'CDH']
-      } else {
-       return this.listCoins.filter((item) => item.includes(this.ticker.toUpperCase())).slice(0, 4)  
-      }  
-    }
+  
   },
 
   methods: {
@@ -339,23 +281,18 @@ export default {
       return  price > 1 ? price.toFixed(2) : price.toPrecision(2);  
     },
 
-    add() {
-       if (this.tickers.find(item => item.name === this.ticker.toUpperCase()) === undefined) {
-          const currentTicker = {
-            name: this.ticker.toUpperCase(),
-            price: "-",
-            pointerBg: "",
-          };
-
-          this.tickers = [...this.tickers, currentTicker];
-          this.ticker = ""; 
-          this.filter = "";
-          subscribeToTicker(currentTicker.name, (newPrice, pointer) => { 
-          this.updateTicker(currentTicker.name, newPrice, pointer);
-          })
-      } else {
-          this.showMessage = true
-      }    
+    add(ticker) {
+      const currentTicker = {
+        name: ticker.toUpperCase(),
+        price: "-",
+        pointerBg: "",
+      };
+      this.tickers = [...this.tickers, currentTicker];
+      this.filter = "";
+      subscribeToTicker(currentTicker.name, (newPrice, pointer) => { 
+      this.updateTicker(currentTicker.name, newPrice, pointer);
+      })
+  
     },
 
     select(ticker){
@@ -371,16 +308,6 @@ export default {
       unsubscribeFromTicker(tickerRemove.name);
       deletingFromKroslist(tickerRemove.name);
     },
-
-    chosCoins(t) {
-      this.ticker = t;
-      this.showMessage = false
-    },
-
-    async fetchCoins() {
-     const coins = await loadCoins();  
-     this.listCoins = coins;
-    },    
   },
 
   watch: {
