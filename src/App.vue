@@ -95,33 +95,10 @@
         </dl>
         <hr class="w-full border-t border-gray-600 my-4" />
       </template>
-
-      <section v-if="selectedTicker" class="relative">
-        <h3 class="text-lg leading-6 font-medium text-gray-900 my-8">
-          {{ selectedTicker.name }} - USD
-        </h3>
-        <div 
-          class="flex items-end border-gray-600 border-b border-l h-64"
-          ref="graph" >
-          <div 
-          v-for="(bar, idx) in normalizedGraph"
-          :key="idx"
-          :style="{ 
-            height: `${bar}%`,
-            width: `${withElementGraph}`
-             }"
-          class="bg-purple-800 border w-7" 
-            ></div>
-        </div>
-        <button 
-            @click="selectedTicker = null"
-            type="button"
-            class="absolute top-0 right-0">
-          
-          <icon-close-graph />
-        </button>
-                
-      </section>
+      <building-graph  
+        :selectedTicker = "selectedTicker"
+        :priceForGraph = "priceForGraph"
+        @close-ticker="selectedTicker = null"/>
     </div>
   </div>
 </template>
@@ -131,25 +108,23 @@ import { nextTick } from 'vue';
 
 import { subscribeToTicker, unsubscribeFromTicker, deletingFromKroslist } from './api';
 import AddTicker from '@/conponents/AddTicker.vue';
-import IconCloseGraph from '@/conponents/IconCloseGraph.vue';
+import BuildingGraph from './conponents/BuildingGraph.vue';
 
 export default {
   name: "App",
 
   components: {
     AddTicker,
-    IconCloseGraph,
+    BuildingGraph
   },
 
   data() {
     return {
       tickers: [],
       selectedTicker: null,
-      graph: [],
+      priceForGraph: null,
       page: 1,
       filter: "",
-      maxGraphElements: 24,
-      withElementGraph: 22,
      };
   },
   created() {
@@ -175,13 +150,9 @@ export default {
         );
       })
     }
-    window.addEventListener("resize", this.calculatingSizeGraphElements);
-    
   },
 
   beforeUnmount() {
-    
-    window.removeEventListener("resize", this.calculatingSizeGraphElements);
     localStorage.setItem('cryptonomicon-list', JSON.stringify(this.tickers));
   }, 
 
@@ -207,17 +178,6 @@ export default {
       return this.filteredTickers.length > this.endIndex
     },
 
-    normalizedGraph() {
-      const maxValue = Math.max(...this.graph);
-      const minValue = Math.min(...this.graph);
-
-      if(maxValue == minValue) {
-        return this.graph.map(() => 50);
-      }
-      return this.graph.map(
-        price => 5 + ((price - minValue) * 95) / (maxValue - minValue));
-    },
-
     pageStateOptions() {
       return {
         filter: this.filter,
@@ -228,46 +188,13 @@ export default {
   },
 
   methods: {
-    // метод расчета количества и ширины элементов графика 
-    // принято что при ширине графика до 400px будет 20 элементов
-    // при ширине более 1400рх - 60 элементов, в среднем диапазоне будет расчет 
-    calculatingSizeGraphElements() {
-      
-      if(!this.$refs.graph) {
-        return;
-      }
-
-      const widthMin = 400;   
-      const widthMax = 1400;
-      const elementsMin = 20;
-      const elementsMax = 60;
-      const widthGrapgFact = this.$refs.graph.clientWidth
-      
-      if ( widthGrapgFact <= 400) {
-          this.maxGraphElements = elementsMin;
-          this.withElementGraph = widthGrapgFact / elementsMin;
-      } else if ( widthGrapgFact <= 400 ) {
-          this.maxGraphElements = elementsMax;
-          this.withElementGraph = widthGrapgFact / elementsMax;
-      } else {
-          let k = (widthGrapgFact - widthMin) / (widthMax - widthMin);
-          this.maxGraphElements = elementsMin + Math.floor( k * (elementsMax - elementsMin));
-          this.withElementGraph = Math.floor(widthGrapgFact / this.maxGraphElements)
-      }
-      console.log(`Graph  N - ${this.maxGraphElements}  W - ${this.withElementGraph}`)
-    },  
 
     updateTicker(tickerName, price, pointer) {
       this.tickers
         .filter(t => t.name === tickerName)
         .forEach(t => {
           if(t === this.selectedTicker) {
-            this.graph.push(price);
-            if (this.graph.length > this.maxGraphElements) {
-              const delta = this.graph.length - this.maxGraphElements;
-              this.graph = this.graph.slice(delta);
-            }
-
+            this.priceForGraph = price;
           }
         t.price = price;
         t.pointerBg = pointer;
@@ -311,12 +238,6 @@ export default {
   },
 
   watch: {
-    selectedTicker() {
-      this.graph= [];
-
-      this.$nextTick().then(this.calculatingSizeGraphElements);
-    },
-
     tickers() {
       localStorage.setItem('cryptonomicon-list', JSON.stringify(this.tickers));
     }, 

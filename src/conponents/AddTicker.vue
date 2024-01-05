@@ -79,8 +79,6 @@ export default {
       },    
    },
 
-   
-
    computed: {
       selectFourCoins() {
          if(this.ticker.length === 0) {
@@ -118,14 +116,9 @@ export default {
    mounted() {
       this.fetchCoins();
    }, 
-
-   watch: {
-     
-   }   
-   
+    
 }
 </script>
 
 <style>
-
 </style>
