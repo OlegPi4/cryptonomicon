@@ -1,5 +1,10 @@
 <template>
-  <div class="container mx-auto flex flex-col items-center bg-gray-100 p-4">
+  <div class="container mx-auto flex flex-col items-center bg-gray-100 p-4"
+    :class="{
+      'wrapper': showModalWindow == true 
+    }
+    "
+  >
     <!-- <div
       class="fixed w-100 h-100 opacity-80 bg-purple-800 inset-0 z-50 flex items-center justify-center"
     >
@@ -24,6 +29,11 @@
         ></path>
       </svg>
     </div> -->
+    <modal-window
+       v-if="showModalWindow" 
+       :tickerDel="tickerForDelet"
+       @ok="handleDelete"
+       @close="cleareDelete" />
     <div class="container">
       <section>
         <add-ticker :listTickers="tickers" @add-ticker="add" />
@@ -72,8 +82,9 @@
               </dd>
             </div>
             <div class="w-full border-t border-gray-200"></div>
+            <!-- @click.stop="handleDelete(t)"  -->
             <button
-              @click.stop="handleDelete(t)"
+              @click.stop="hendleModalWindow(t)"
               class="flex items-center justify-center font-medium w-full bg-gray-100 px-4 py-4 sm:px-6 text-md text-gray-500 hover:text-gray-600 hover:bg-gray-200 hover:opacity-20 transition-all focus:outline-none"
             >
               <svg
@@ -104,18 +115,20 @@
 </template>
 
 <script>
-import { nextTick } from 'vue';
+import { handleError, nextTick } from 'vue';
 
 import { subscribeToTicker, unsubscribeFromTicker, deletingFromKroslist } from './api';
 import AddTicker from '@/conponents/AddTicker.vue';
 import BuildingGraph from './conponents/BuildingGraph.vue';
+import ModalWindow from './conponents/ModalWindow.vue';
 
 export default {
   name: "App",
 
   components: {
     AddTicker,
-    BuildingGraph
+    BuildingGraph,
+    ModalWindow,
   },
 
   data() {
@@ -125,6 +138,8 @@ export default {
       priceForGraph: null,
       page: 1,
       filter: "",
+      showModalWindow: false,
+      tickerForDelet: null,
      };
   },
   created() {
@@ -227,13 +242,25 @@ export default {
  
     },
 
-    handleDelete(tickerRemove) {
-      this.tickers = this.tickers.filter((t) => t !== tickerRemove);
-      if(this.selectedTicker == tickerRemove) {
+    hendleModalWindow(t) {
+      this.showModalWindow = !this.showModalWindow
+      this.tickerForDelet = t;
+    },
+
+    cleareDelete() {
+      this.showModalWindow = !this.showModalWindow
+      this.tickerForDelet = {};
+    },
+
+    handleDelete() {
+      this.tickers = this.tickers.filter((t) => t !== this.tickerForDelet);
+
+      if(this.selectedTicker == this.tickerForDelet) {
         this.selectedTicker = null;
       }
-      unsubscribeFromTicker(tickerRemove.name);
-      deletingFromKroslist(tickerRemove.name);
+      unsubscribeFromTicker(this.tickerForDelet.name);
+    //  deletingFromKroslist(this.tickerForDelet.name);
+      this.cleareDelete();
     },
   },
 
@@ -264,4 +291,8 @@ export default {
 
 </script>
 
-
+<style>
+  .wrapper{
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+</style>
